@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kuisioner DASS-21</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin: 5px 0;
+    }
+    .score-box {
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 20px;
+      display: none;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    @media (max-width: 600px) {
+      body { font-size: 18px; }
+      label { font-size: 18px; }
+      input[type="radio"] { transform: scale(1.4); margin-right: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Kuisioner DASS-21</h1>
+    <p><strong>Petunjuk:</strong> Jawablah setiap pernyataan berdasarkan kondisi Anda selama seminggu terakhir.</p>
+    <p>Skor: 0 = Tidak pernah, 1 = Kadang-kadang, 2 = Cukup sering, 3 = Sangat sering atau hampir selalu</p>
+
+    <form id="dassForm"></form>
+
+    <div id="result" class="score-box"></div>
+
+    <div style="text-align:center; margin-top:20px;">
+      <button onclick="calculateScore()">Lihat Hasil</button>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      ["Saya merasa sulit untuk bersantai.", "stres"],
+      ["Saya merasa mulut saya kering.", "kecemasan"],
+      ["Saya tidak dapat mengalami hal-hal yang menyenangkan seperti biasanya.", "depresi"],
+      ["Saya merasa sulit untuk bernapas tanpa alasan yang jelas.", "kecemasan"],
+      ["Saya merasa tidak berharga.", "depresi"],
+      ["Saya merasa cemas tanpa alasan yang jelas.", "stres"],
+      ["Saya merasakan jantung berdebar tanpa alasan.", "kecemasan"],
+      ["Saya merasa mudah tersinggung.", "stres"],
+      ["Saya merasa panik tanpa sebab.", "kecemasan"],
+      ["Saya merasa tidak ada harapan sama sekali.", "depresi"],
+      ["Saya merasa reaksi saya berlebihan terhadap situasi.", "stres"],
+      ["Saya merasa sulit untuk tenang setelah sesuatu mengganggu saya.", "stres"],
+      ["Saya merasa hidup tidak berarti.", "depresi"],
+      ["Saya merasa saya menggunakan banyak energi untuk mengatasi kekhawatiran.", "stres"],
+      ["Saya gemetar (misalnya, tangan).", "kecemasan"],
+      ["Saya merasa sedih dan murung.", "depresi"],
+      ["Saya merasa tidak ada yang bisa saya nantikan.", "depresi"],
+      ["Saya merasa mudah terganggu.", "stres"],
+      ["Saya merasa takut tanpa alasan yang jelas.", "kecemasan"],
+      ["Saya merasa saya akan panik dan membuat malu diri saya sendiri.", "kecemasan"],
+      ["Saya merasa tidak bersemangat untuk melakukan apa pun.", "depresi"]
+    ];
+
+    const form = document.getElementById("dassForm");
+    questions.forEach((q, i) => {
+      const div = document.createElement("div");
+      div.classList.add("question");
+      div.innerHTML = `
+        <p><strong>${i + 1}. ${q[0]}</strong></p>
+        <label><input type="radio" name="q${i}" value="0" required> 0 - Tidak pernah</label>
+        <label><input type="radio" name="q${i}" value="1"> 1 - Kadang-kadang</label>
+        <label><input type="radio" name="q${i}" value="2"> 2 - Cukup sering</label>
+        <label><input type="radio" name="q${i}" value="3"> 3 - Sangat sering atau hampir selalu</label>
+        <input type="hidden" name="domain${i}" value="${q[1]}">
+      `;
+      form.appendChild(div);
+    });
+
+    function getColor(kategori) {
+      switch (kategori) {
+        case "Normal": return "#d4edda";
+        case "Ringan": return "#fff3cd";
+        case "Sedang": return "#ffeeba";
+        case "Berat": return "#f8d7da";
+        case "Sangat Berat": return "#f5c6cb";
+        default: return "#ffffff";
+      }
+    }
+
+    function kategori(nilai, jenis) {
+      if (jenis === "depresi") {
+        if (nilai <= 9) return "Normal";
+        if (nilai <= 13) return "Ringan";
+        if (nilai <= 20) return "Sedang";
+        if (nilai <= 27) return "Berat";
+        return "Sangat Berat";
+      }
+      if (jenis === "kecemasan") {
+        if (nilai <= 7) return "Normal";
+        if (nilai <= 9) return "Ringan";
+        if (nilai <= 14) return "Sedang";
+        if (nilai <= 19) return "Berat";
+        return "Sangat Berat";
+      }
+      if (jenis === "stres") {
+        if (nilai <= 14) return "Normal";
+        if (nilai <= 18) return "Ringan";
+        if (nilai <= 25) return "Sedang";
+        if (nilai <= 33) return "Berat";
+        return "Sangat Berat";
+      }
+    }
+
+    function calculateScore() {
+      let data = new FormData(form);
+      let scores = {depresi: 0, kecemasan: 0, stres: 0};
+
+      for (let i = 0; i < 21; i++) {
+        let val = parseInt(data.get("q" + i));
+        let domain = data.get("domain" + i);
+        if (!isNaN(val)) {
+          scores[domain] += val;
+        }
+      }
+
+      for (let key in scores) {
+        scores[key] *= 2;
+      }
+
+      const dep = kategori(scores.depresi, "depresi");
+      const anx = kategori(scores.kecemasan, "kecemasan");
+      const str = kategori(scores.stres, "stres");
+
+      const result = document.getElementById("result");
+      result.innerHTML = `
+        <h2>Hasil Skor Anda</h2>
+        <div style="background:${getColor(dep)}; padding:10px; border-radius:5px;">
+          <p><strong>Depresi:</strong> ${scores.depresi} (${dep})</p>
+        </div>
+        <div style="background:${getColor(anx)}; padding:10px; border-radius:5px;">
+          <p><strong>Kecemasan:</strong> ${scores.kecemasan} (${anx})</p>
+        </div>
+        <div style="background:${getColor(str)}; padding:10px; border-radius:5px;">
+          <p><strong>Stres:</strong> ${scores.stres} (${str})</p>
+        </div>
+        <hr>
+        <p><strong>Kesimpulan dan Saran:</strong> Jika hasil menunjukkan kategori sedang ke atas, pertimbangkan untuk berbicara dengan konselor, psikolog, atau tenaga profesional lainnya. Jaga keseimbangan hidup, istirahat cukup, dan tetap terhubung dengan orang-orang terdekat.</p>
+      `;
+      result.style.display = "block";
+    }
+  </script>
+</body>
+</html>
